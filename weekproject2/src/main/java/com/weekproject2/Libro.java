@@ -20,6 +20,7 @@ public class Libro extends Scritto {
         super(ISBN, titolo, annoUscita, numeroPagine);
         this.type = "Libro";
     }
+    public Libro() {};
 
     public void setAutore(String autore) {
         this.autore = autore;
@@ -37,7 +38,7 @@ public class Libro extends Scritto {
     @Override
     public String toString() {
         
-        return super.toString().replace("Scritto", this.type) + " Autore: " +this.autore+" Genere: "+this.genere;
+        return super.toString() + "@" +this.autore+"#"+this.genere;
     }
 
     

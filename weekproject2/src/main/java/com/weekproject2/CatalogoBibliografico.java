@@ -1,143 +1,164 @@
 package com.weekproject2;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.io.*;
+import java.util.Scanner;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.commons.io.FileUtils;
+
 import com.weekproject2.Rivista.period;
 
-public final class CatalogoBibliografico {
-    public static Logger log = LoggerFactory.getLogger(CatalogoBibliografico.class);
-    public static Map< Long, Scritto > archivioScritti = new HashMap<>();
-    public static Map< Long, Libro > archivioLibri = new HashMap<>();
-    public static Map< Long, Rivista > archivioRiviste = new HashMap<>();
+public final class CatalogoBibliografico extends Archivi {
+    public static File txtFile = new File("EpicStorage/archivio.txt");
+    public static Logger log = LoggerFactory.getLogger(CatalogoBibliografico.class);  
+    public static Scanner scan = new Scanner(System.in);
 
-    public static Scritto aggiungiScritto(long ISBN, String titolo, int annoUscita, int numeroPagine){
-        Scritto scritto = new Scritto(ISBN,titolo, annoUscita, numeroPagine);
-        archivioScritti.put(ISBN, scritto);
-        System.out.println("Hai aggiunto ("+scritto.toString()+") all'archivio");
-        return scritto; 
+    public static void main(String[] args) throws Exception {
+        archiviInit();
+        scanInit();
+        salvaArchivio();  
     }
-    public static Libro aggiungiLibro(long ISBN, String titolo, int annoUscita, int numeroPagine, String autore, String genere){
-        Libro libro = new Libro(ISBN,titolo,annoUscita,numeroPagine, autore, genere);
-        archivioScritti.put(ISBN, libro);
-        archivioLibri.put(ISBN, libro);
-        System.out.println("Hai aggiunto ("+libro.toString()+") all'archivio");
-        return libro;  
+    static public void archiviInit() throws IOException{
+        caricaArchivio();
+        setIsbnCounter(archivioScritti.size());
     }
-    public static Rivista aggiungiRivista(long ISBN, String titolo, int annoUscita, int numeroPagine, period period){
-        Rivista rivista = new Rivista(ISBN,titolo,annoUscita,numeroPagine,period);
-        archivioScritti.put(ISBN, rivista);
-        archivioRiviste.put(ISBN, rivista);
-        System.out.println("Hai aggiunto ("+rivista.toString()+") all'archivio");
-        return rivista;  
-    }
-
-    // public static  void aggiungiAdArchivio(long ISBN, String titolo, int annoUscita, int numeroPagine, String type) {
-    //     switch (type) {
-    //         case "Scritto":
-    //             aggiungiScritto(ISBN, titolo, annoUscita, numeroPagine);
-    //             break;
-    //         case "Libro":
-    //             aggiungLibro(ISBN, titolo, annoUscita, numeroPagine);
-    //             break;
-    //         case "Rivista":
-    //             aggiungRivista(ISBN, titolo, annoUscita, numeroPagine);
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    // }
-
-    public static void rimuoviScritto(long ISBN) {
-        System.out.println("Hai rimosso ("+archivioScritti.get(ISBN).toString()+") dall'archivio");
-        archivioScritti.remove(ISBN);
-        if(archivioLibri.keySet().contains(ISBN)){
-            archivioLibri.remove(ISBN);
-        } else if(archivioRiviste.keySet().contains(ISBN)){
-            archivioRiviste.remove(ISBN);
+    static public void scanInit() throws IOException{
+        System.out.println("[Digita]");
+        System.out.println("[aggiungi] -> Aggiungi un libro o una rivista all'archivio");
+        System.out.println("[rimuovi] -> Rimuovi un libro o una rivista dall'archivio");
+        System.out.println("[cerca] -> Cerca un libro o una rivista nell'archivio");
+        System.out.println("[leggi archivio] -> Ottieni la lista di tutti gli scritti");
+        System.out.println("[salva archivio] -> Salva l'archivio");
+        System.out.println("[esci] -> Salva ed esci dal catalogo (Bug: Nel caso il comando non funzionasse, ripeterlo fino all'uscita)");
+        switch (scan.nextLine()) {
+            case "aggiungi":
+                scanAggiungi();
+                scanInit();
+                break;
+            case "rimuovi":
+                scanRimuovi();
+                scanInit();
+                break;
+            case "cerca":
+                scanCerca();
+                scanInit();
+                break;
+            case "leggi archivio":
+                System.out.println("");
+                archivioScritti.entrySet()
+                .forEach(scritto -> System.out.println(scritto.toString()));
+                System.out.println("");
+                scanInit();
+                break;
+            case "salva archivio":
+                System.out.println("");
+                salvaArchivio();
+                scanInit();
+                break;
+            case "esci":
+                break;
+            default:
+                System.out.println("Attenzione - errore, riprova");
+                scanInit();
+                break;
         }
     }
-
-    public static Scritto cercaIsbn(long ISBN){
-        Scritto scritto = archivioScritti.get(ISBN);
-        System.out.println("Risultato ricerca: "+scritto.toString());
-        return scritto;
+    static public void scanAggiungi() throws IOException {
+        System.out.println("[Digita]");
+        System.out.println("[libro, numeroPagine, titolo, anno, autore, genere] -> Aggiungi libro");
+        System.out.println("[rivista, numeroPagine, titolo, anno, period (SETTIMANALE/MENSILE/SEMESTRALE)] -> Aggiungi rivista");
+        String[] split = scan.nextLine().split(",");
+        switch (split[0]) {
+            case "libro":
+                aggiungiLibro(getIsbnCounter()+1, split[2].trim(), Integer.parseInt(split[3].trim()),Integer.parseInt(split[1].trim()), split[4].trim(), split[5].trim());
+                setIsbnCounter(isbnCounter+1);
+                scanInit();
+                break;
+            case "rivista":
+                aggiungiRivista(getIsbnCounter()+1, split[2].trim(), Integer.parseInt(split[3].trim()),Integer.parseInt(split[1].trim()), period.valueOf(split[4].trim()));
+                setIsbnCounter(isbnCounter+1);
+                scanInit();
+                break;
+            default:
+                System.out.println("Attenzione - errore, riprova");
+                scanAggiungi();
+                break;
+        }
     }
-    public static Collection<Scritto> cercaAnno(int annoUscita){
-        Collection<Scritto> dellAnno = archivioScritti.values()
-        .stream()
-        .filter(scritto -> scritto.getAnnoUscita() == annoUscita)
-        .toList();
-        System.out.println("Risultato ricerca: "+ dellAnno.toString());
-        return dellAnno;
-    }
-    public static Collection<Libro> cercaAutore(String autore){
-        List<Libro> dellAutore = archivioLibri.values()
-        .stream()
-        .filter(libro -> libro.getAutore() == autore)
-        .toList();        
-        System.out.println("Risultato ricerca: "+ dellAutore.toString());
-        return dellAutore;
-    }
-
-    public static void salvaArchivio() throws IOException {
-		File archivio = new File("EpicStorage/archivio.txt");
-		FileUtils.write(archivio,scriviSuDisco(),"UTF-8");
-		System.out.println("Registro salvato");
-	}
-
-    public static CharSequence scriviSuDisco(){
-        CharSequence data = archivioScritti.toString();
-        return data;        
-    }
-
-    // public HashMap< Long, Scritto> caricaArchivio() throws IOException {
-	// 	File archivio = new File("EpicStorage/archivio.txt");
-	// 	String data = FileUtils.readFileToString(archivio,"UTF-8");
-	// 	String[] scritti = data.split(",");
-    //     Map< Long, Scritto> archivioCaricato = new HashMap< Long, Scritto> ();
-    //     archivioCaricato.put(leggiIsbn(scritti), leggiScritto());
-	// 	return archivioCaricato;
-	// }
-
-    static long isbn;
-    public static long leggiIsbn(String[] scritti){
-        for (int i=0; i < scritti.length; i++){
-            char[] charData = scritti[i].toCharArray();
-            for(int k = 0; k < charData.length; k++){
-                
-                while(charData[i]!='='){
-                    String stringData = charData[i] + "";
-                    isbn += Long.parseLong(stringData);
+    static public void scanRimuovi() {
+        System.out.println("Cosa? [libro/rivista]");
+        switch (scan.nextLine()) {
+            case "libro":
+            System.out.println("");
+            archivioLibri.entrySet().forEach(el -> System.out.println(el.toString()));
+            System.out.println("");
+            System.out.println("Dalla lista qui in alto, identifica il numero del libro da rimuovere e digitalo");
+            try{
+                rimuoviScritto(Long.parseLong(scan.nextLine()));
+                } catch (Exception e) {
+                    System.out.println("Attenzione - errore, riprova");
+                    scanRimuovi();
                 }
-                log.info(""+isbn); 
+                break;
+            case "rivista":
+            System.out.println("");
+            archivioRiviste.entrySet().forEach(el -> System.out.println(el.toString()));
+            System.out.println("");
+            System.out.println("Dalla lista qui in alto, identifica il numero della rivista da rimuovere e digitalo");
+            try{
+            rimuoviScritto(Long.parseLong(scan.nextLine()));
+            } catch (Exception e) {
+                System.out.println("Attenzione - errore, riprova");
+                scanRimuovi();
             }
+                break;
+            default:
+            System.out.println("Attenzione - errore, riprova");
+            scanRimuovi();
+                break;
         }
-        return isbn; 
     }
-
-    public static void main(String[] args) throws IOException {
-        Libro scritto1 = aggiungiLibro((long) 123, "Even", 2023, 2, "Elon Musk", "Scienze" );
-        Libro scritto2 = aggiungiLibro((long) 456, "Odd", 2019, 1, "Bill Gates", "Scienze");
-        Rivista scritto3 = aggiungiRivista(789, "Math", 2023, 123, period.SEMESTRALE);
-        cercaIsbn(456);
-        cercaAnno(2023);
-        cercaAutore("Bill Gates");
-        rimuoviScritto(123);
-        salvaArchivio();
-
-        //test carica dati (memo: nf on ssd !!!)
-        String data = "{789=[Rivista nPagine(123)] - 'Math'  Anno: 2023 period: SEMESTRALE, 456=[Libro nPagine(1)] - 'Odd'  Anno: 2019 Autore: Bill Gates Genere: Scienze}";
-        String[] scritti = data.split(",");
-        leggiIsbn(scritti);
+    static public void scanCerca() {
+        System.out.println("Seleziona il criterio di ricerca [isbn/anno/autore]");
+        String input = scan.nextLine();
+        switch (input) {
+            case "isbn":
+            System.out.println("");
+            System.out.print("Digita il numero isbn: ");
+            Long isbn = Long.parseLong(scan.nextLine());
+            try{
+            cercaIsbn(isbn);
+            } catch (Exception e) {
+                System.out.println("Attenzione - errore, riprova");
+                scanCerca();
+            }
+                break;
+            case "anno":
+            System.out.println("");
+            System.out.print("Digita l'anno richiesto:");
+            String anno = scan.nextLine();
+            try{
+            cercaAnno(Integer.parseInt(anno));
+            } catch (Exception e) {
+            System.out.println("Attenzione - errore, riprova");
+            scanCerca();
+            }
+                break;
+            case "autore":
+            System.out.println("");
+            System.out.print("Digita l'autore richiesto:");
+            String autore = scan.nextLine();
+            try{
+            cercaAutore(autore);
+            } catch (Exception e) {
+            System.out.println("Attenzione - errore, riprova");
+            scanCerca();
+            }
+                break;
+            default:
+            System.out.println("Attenzione - errore, riprova");
+            scanCerca();
+                break;
+        }
     }
-    
 }

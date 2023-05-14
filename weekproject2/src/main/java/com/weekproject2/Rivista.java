@@ -6,20 +6,20 @@ public class Rivista extends Scritto {
     String titolo;
     int annoUscita;
     int numeroPagine;
-    String type;
+    String type = "Rivista";
     
     public static enum period {SETTIMANALE,MENSILE,SEMESTRALE};
     public period period;
 
     public Rivista( long ISBN, String titolo,int annoUscita, int numeroPagine,  period period){
         super(ISBN, titolo, annoUscita, numeroPagine);
-        this.type = "Rivista";
         this.period = period;
     }
     public Rivista( long ISBN, String titolo,int annoUscita, int numeroPagine){
         super(ISBN, titolo, annoUscita, numeroPagine);
-        this.type = "Rivista";
+        
     }
+    public Rivista(){};
 
     public void setPeriod(period period) {
         this.period = period;
@@ -30,6 +30,6 @@ public class Rivista extends Scritto {
 
     @Override
     public String toString() {
-        return super.toString().replace("Scritto", this.type) + " period: "+this.period ;
+        return super.toString() + "§"+this.period ;
     }
 }

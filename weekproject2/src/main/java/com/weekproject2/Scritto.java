@@ -13,10 +13,11 @@ public class Scritto {
     this.annoUscita = annoUscita;
     this.numeroPagine = numeroPagine;
     }
+    public Scritto(){};
 
     @Override
     public String toString() {
-        return "["+this.type+" nPagine("+this.numeroPagine+")] - '"+this.titolo+"'  Anno: "+this.annoUscita;
+        return this.titolo+"!"+this.numeroPagine+"&"+this.annoUscita;
     }
 
     public int getAnnoUscita() {
